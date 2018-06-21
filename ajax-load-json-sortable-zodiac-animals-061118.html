@@ -1,0 +1,250 @@
+<!-- ajax-load-json-animals.html -->
+<!DOCTYPE html>
+<html lang="en-us">
+
+    <head>
+        
+      <title>AJAX Load and Sort JSON</title>
+        
+      <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.10/css/all.css" integrity="sha384-+d0P83n9kaQMCwj8F4RJB66tzIwOKmrdb46+porD/OvrJ+37WqIM7UoBtwHO6Nlg" crossorigin="anonymous">
+        
+    </head>
+    
+    <style>
+        
+        body {
+            background-color: #AAA;
+            font-family: sans-serif;
+            text-align: center;
+            color: #555;
+        }
+        
+        .container {
+            width: 1300px;
+            margin: 20px auto;
+            min-height: 750px;
+            background-color: #DDD;
+/*            border: 5px solid #FFF;*/
+            padding: 20px;
+        }
+
+        button {
+            width: 250px;
+            padding: 10px;
+            margin: 0 10px;
+            font-weight: bold;
+            font-size: 1.25rem;
+            color: #555;
+        }
+        
+        #app {
+            width: 90%;
+            padding: 15px;
+            min-height: 500px;
+            background-color: #CCC;
+            margin: 20px auto;
+        }
+        
+        .divvy {
+            background-color: #FFF;
+/*            border: 2px solid #777;*/
+            padding: 10px 20px;
+            margin: 15px;
+            text-align: left;
+            font-size: 1.75rem;
+            letter-spacing: 1px;
+        }
+        
+        .pic {
+            width: 70px; 
+            margin: 5px 20px;
+        }
+        
+        .english-name {
+            font-size: 2rem; 
+            font-weight: bold; 
+            color: #555; 
+            text-transform: uppercase; 
+            margin: 0 10px;
+        }
+        
+        .pinyin-name {
+            font-size: 2rem; 
+            font-weight: bold; 
+            color: #900; 
+            margin: 0 10px;
+        }
+        
+        .spanny {
+            margin-left: 35px; 
+            padding: 10px; 
+            font-size: 1.25rem
+        }
+        
+    </style>
+    
+    <body>
+    
+        <div class="container">
+            
+            <header>
+                
+                <h1>Chinese Zodiac Animals</h1>
+                
+                <button id="load-btn" onclick="ajaxLoadJSON('js/animals.json')">AJAX LOAD JSON</button>
+                
+                <button id="eng-sort-btn" name="eng" onclick="sortByKey(engArr, animals)">
+                   <i class="fas fa-sort"></i> &nbsp; ENGLISH
+                </button>
+                
+                <button id="pin-sort-btn" name="pin" onclick="sortByKey(pinArr, animals)">
+                   <i class="fas fa-sort"></i> &nbsp; PINYIN
+                </button>
+                
+                <button id="year-sort-btn" name="year" 
+                        onclick="sortByKey(yearArr, animals)">
+                        <i class="fas fa-sort"></i> &nbsp; YEAR</button>
+                
+            </header>
+            
+            <div id="app"></div>
+            
+        </div><!-- close container -->
+        
+        <script>
+
+            function ajaxLoadJSON(jsonPath) {
+                
+                const xhr = new XMLHttpRequest()
+                
+                xhr.onreadystatechange = () => {
+                    
+                    if(xhr.status == 200 && xhr.readyState == 4) {
+                        
+                        animals = JSON.parse(xhr.responseText)
+
+                        yearArr = animals.map(e => e.year).sort() // so: yearsArr = [2008, 2009, 2010...2017, 2018, 2019]
+                        
+                        engArr = animals.map(e => e.eng).sort() // engArr = ['chicken', 'cow'...'snake', 'tiger']
+                        
+                        pinArr = animals.map(e => e.pin).sort() // pinArr = sorted by pinyin name
+                        
+                        outputAnimals() // call func only once data is loaded
+                        
+                    } // end if
+                    
+                } // close xhr.onready...
+                
+                xhr.open('GET', jsonPath, true)
+                xhr.send()
+                
+            } // end function ajaxLoadJSON()
+               
+            const app = document.getElementById('app')
+            const sound = new Audio()
+            
+            function outputAnimals() {
+                
+                app.innerHTML = ""
+                
+                for(let i = 0; i < animals.length; i++) {
+                    
+                    // 0.) a div to hold ONE animal at a time
+                    let divo = document.createElement('div')
+                    divo.className = "divvy"
+                    app.appendChild(divo)
+                    
+                    // 1.) add image of animal w name
+                    let animalPic = new Image()
+                    animalPic.src = `images/${animals[i].eng}.jpg`
+                    animalPic.className = "pic"
+                    animalPic.style.cssText = "width:100px"
+                    divo.appendChild(animalPic)
+                    
+                    // 2.) add chinese character image w pinyin
+                    let character = new Image()
+                    character.src = `images/char-${animals[i].chi}.jpg`
+                    character.className = "pic"
+                    divo.appendChild(character)
+                    
+                    // 3.) add sound icon to click to play sound
+                    let soundIcon = new Image()
+                    soundIcon.src = `images/sound-icon.png`
+                    soundIcon.className = "pic"
+                    soundIcon.style.cssText = "width:50px; cursor:pointer; padding-bottom:15px"
+                    soundIcon.name = animals[i].eng // event.target.name
+                    soundIcon.addEventListener('click', playSound)
+                    divo.appendChild(soundIcon)
+                    
+                    // text goes in span, so as not to cancel sound event listener
+                    let spanner = document.createElement('span')
+                    spanner.className = "spanny"
+                    divo.appendChild(spanner)
+                    
+                    // 4.) add English name -- this is just text
+                    spanner.innerHTML = '<span class="english-name">' + animals[i].eng + '</span>'
+                    
+                    // 5.) add Pinyin name -- this is just text
+                    spanner.innerHTML += '<span class="pinyin-name">' + animals[i].pin + '</span> - ' 
+                    
+                    // 6.) add YearS -- this is just text: vars for setting the start and end years:
+                    let startYear = animals[i].year - 348
+                    let endYear = animals[i].year + 180
+                    let years = '' // "1988 2000 2012 2024", etc
+                    // 7.) a for loop for generating a range of years
+                    for(let j = startYear; j < endYear; j+=12) {
+                        if(j == animals[i].year) {
+                            years += '<span style="color:red; font-weight:bold">' + j + "</span> "
+                        } else {
+                            years += j + " "
+                        }
+                    }
+                    spanner.innerHTML += years // multi-year string            
+                } // end for loop      
+            } // end function outputAnimals()
+            
+            function playSound() {
+                sound.src = 'audio/' + event.target.name + '.mp3'
+                sound.play()
+            } // function playSound()
+            
+            var asc = true
+            
+            function sortByKey(arr, objArr) { 
+                
+                let sortedObjArr = []
+                
+                let key = event.target.name // eng, pin or year
+                
+                // nested loop: outer loop iterates simple arr
+                for(let i = 0; i < arr.length; i++) {
+                    
+                    // inner loop iterates animals, the objArr
+                    for(let j = 0; j < objArr.length; j++) {
+                        
+                        // if simple arr year == this animal year
+                        if(arr[i] == objArr[j][key]) {
+                            // we found the animal that matches
+                            // how to make the sort work for ASC / DESC ..?
+                            // Hint: toggle Boolean to track ASC vs. DESC
+                            if(asc) { // if ascending
+                                sortedObjArr.push(objArr[j])
+                            } else {
+                                sortedObjArr.unshift(objArr[j])
+                            } // if-else
+                            
+                        } // if   
+                        
+                    } // for j
+                    
+                } // for i   
+                asc = !asc // flip the boolean
+                animals = sortedObjArr // set animals to sorted
+                outputAnimals() // re-render the animals
+                
+            } //  function sortByKey(arr, objArr)
+
+        </script>
+    
+    </body>
+</html>
